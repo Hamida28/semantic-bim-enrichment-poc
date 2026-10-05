@@ -1,0 +1,4 @@
+Place a small IFC file in this folder and rename it model.ifc.
+
+A sample IFC can be downloaded from the official IfcOpenShell "Hello, world!" documentation.
+See README.md for the link and instructions.

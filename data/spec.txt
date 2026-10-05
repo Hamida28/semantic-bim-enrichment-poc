@@ -1,0 +1,7 @@
+Technical specification — demonstration only
+
+1. All doors on protected circulation routes must have an appropriate fire-resistance rating documented in the BIM data.
+2. External windows must include acoustic-performance information where specified by the project requirements.
+3. Walls separating distinct dwelling units must carry the required acoustic-performance information.
+4. Floor slabs in technical areas must identify the relevant fire-resistance requirement when applicable.
+5. Any inferred information must remain traceable to its documentary source and must be validated by a human before being treated as compliant.
