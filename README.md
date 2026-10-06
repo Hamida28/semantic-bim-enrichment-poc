@@ -2,11 +2,11 @@
 
 A small proof of concept exploring how AI can help connect **structured BIM/IFC data** with **unstructured technical project requirements**.
 
-The objective is not to automate compliance decisions, but to investigate how semantic information could be proposed for BIM objects while preserving **uncertainty, traceability and human validation**.
+The objective is not to automate compliance decisions, but to investigate how semantic information can be proposed for BIM objects while preserving **context, uncertainty, traceability and human validation**.
 
 ## The problem
 
-BIM models contain structured information about building objects: walls, doors, windows, slabs, properties, classifications and relationships.
+BIM models contain structured information about building objects such as walls, doors, windows, slabs, properties and classifications.
 
 However, a significant part of project knowledge remains stored in unstructured sources such as:
 
@@ -17,7 +17,7 @@ However, a significant part of project knowledge remains stored in unstructured 
 
 This project explores one question:
 
-> **Can an AI system identify which textual requirements may be relevant to specific BIM objects by using the information contained in an IFC model?**
+> **Can an AI system identify which textual requirements may be relevant to specific BIM objects using the information available in an IFC model?**
 
 ## Architecture
 
@@ -56,47 +56,47 @@ Structured BIM data ───────► Semantic analysis
 
 ## Method
 
-The proof of concept compares two approaches applied to the same BIM data.
+The proof of concept compares two approaches applied to the **same BIM object and the same technical requirements**.
 
 ### 1. Deterministic baseline
 
-The first implementation uses simple rules based primarily on the IFC object class and keywords found in the technical requirements.
+The first implementation uses simple rules based on the IFC object class and keywords contained in the technical requirements.
 
-Example:
+For example:
 
 ```text
 IfcDoor
    ↓
-Search requirements mentioning doors
+Search requirements containing "door"
    ↓
 Associate matching requirement
 ```
 
-This approach is deterministic and easy to audit, but it does not understand the context in which the BIM object exists.
+This approach is deterministic and easy to audit.
+
+However, it mainly identifies lexical relationships. It does not determine whether all the conditions contained in a requirement are actually satisfied by the BIM context.
 
 ### 2. LLM-assisted semantic analysis
 
-The second implementation provides the LLM with:
+The second implementation provides the language model with:
 
-- the IFC object type;
-- its available properties;
-- contextual BIM data;
+- the IFC object class;
+- the available BIM properties;
+- contextual information contained in the IFC data;
 - the technical requirements.
 
-The model is explicitly instructed to:
+The model is instructed to:
 
 - avoid inventing unavailable information;
-- identify potentially applicable requirements;
-- explain its reasoning;
-- report a confidence level;
-- suggest an IFC/BIM property when appropriate;
+- identify potentially relevant requirements;
+- explain why they may apply;
+- report uncertainty through a confidence level;
+- suggest a possible BIM property where appropriate;
 - leave the final decision to a human reviewer.
 
-## Experiment — same BIM object, different behaviour
+## Experiment — same BIM object, different reasoning behaviour
 
-A door from the IFC model was analysed using both approaches.
-
-Object:
+The following BIM object was analysed using both approaches:
 
 ```text
 GlobalId: 0pGAjlJMP3ifYPATVF5xAR
@@ -104,29 +104,41 @@ IFC class: IfcDoor
 Name: Innentuer-2
 ```
 
-### Deterministic baseline
-
-The baseline automatically associated the following requirement with the door:
+The technical specification contained the following requirement:
 
 > All doors on protected circulation routes must have an appropriate fire-resistance rating documented in the BIM data.
 
-The association was made because the object was an `IfcDoor`.
+### Deterministic baseline
 
-However, this does **not** prove that the door actually belongs to a protected circulation route.
+The deterministic baseline associates this requirement with the object because:
+
+```text
+Object class = IfcDoor
++
+Requirement contains "doors"
+```
+
+Result:
 
 ![Deterministic baseline result](docs/baseline-door.png)
 
-This illustrates a potential **false positive** caused by overly simple matching rules.
+This establishes a lexical relationship between the BIM object and the requirement.
+
+However, the rule does not analyse the additional condition:
+
+> **on protected circulation routes**
+
+The baseline therefore cannot determine whether this condition is actually supported by the IFC data.
 
 ### LLM-assisted analysis
 
-For the exact same BIM object, the LLM returned a more contextual result.
+The same BIM object was then analysed using the LLM.
 
-It detected that the door connects to a hallway (`Flur`), making the fire-resistance requirement potentially relevant.
+The model identified that the door connects to a hallway (`Flur`), making the fire-resistance requirement potentially relevant.
 
-However, it also explicitly identified that the IFC data did **not establish that this hallway was a protected circulation route**.
+However, it also identified that the available IFC data does **not establish that this hallway is a protected circulation route**.
 
-The result therefore included:
+It therefore returned:
 
 ```text
 confidence: low
@@ -134,47 +146,59 @@ suggested property: Pset_DoorCommon.FireRating
 suggested value: null
 ```
 
+Result:
+
 ![LLM contextual analysis](docs/llm-door.png)
 
-Instead of declaring the requirement applicable, the model identified it as a **candidate requirement requiring additional evidence and human validation**.
+The important difference is therefore not that the LLM has proven the requirement to be applicable or not applicable.
+
+Instead:
+
+```text
+Deterministic baseline
+        ↓
+"IfcDoor" matches "doors"
+        ↓
+requirement associated
+```
+
+versus:
+
+```text
+LLM-assisted analysis
+        ↓
+IfcDoor + BIM properties + requirement conditions
+        ↓
+requirement potentially relevant
+        ↓
+missing evidence identified
+        ↓
+confidence = low
+        ↓
+human validation required
+```
 
 ## Initial observation
 
 | Capability | Deterministic baseline | LLM-assisted approach |
 |---|---|---|
 | Uses IFC object class | Yes | Yes |
-| Uses contextual properties | Very limited | Yes |
-| Understands conditional wording | No | Partially |
-| Provides explanation | No | Yes |
+| Uses textual keywords | Yes | Yes |
+| Uses BIM contextual properties | No / very limited | Yes |
+| Interprets conditional wording | No | Partially |
+| Provides an explanation | No | Yes |
 | Represents uncertainty | No | Yes |
-| Can still produce incorrect results | Yes | Yes |
+| Suggests BIM properties | No | Yes |
+| Can produce incorrect results | Yes | Yes |
 | Requires human validation | Yes | Yes |
 
-This experiment **does not demonstrate that an LLM is globally more accurate than deterministic rules**.
+This experiment **does not demonstrate that the LLM is globally more accurate than deterministic rules**.
 
-It only demonstrates that, for the examples observed in this prototype, semantic analysis can take additional contextual information into account and explicitly represent uncertainty.
+It demonstrates a narrower point:
 
-A proper comparison would require a labelled test dataset and systematic evaluation.
+> A language model can use additional contextual information and explicitly represent uncertainty where a simple class/keyword matching rule cannot.
 
-## BIM data exploration
-
-IfcOpenShell is used to extract structured information from the IFC model.
-
-Example IFC properties encountered during the experiment included:
-
-```text
-Object class: IfcWallStandardCase
-Space: Wohnen
-Layer: Innenwände
-Type: Wand
-Material: Leichtbeton
-Structural function: Not defined
-Renovation status: Existing
-```
-
-This illustrates an important characteristic of BIM:
-
-> A BIM model is not only geometry. It is also a structured information system containing data that can potentially be analysed programmatically.
+A proper accuracy comparison would require a manually labelled reference dataset and systematic evaluation.
 
 ## Why validation matters
 
@@ -187,16 +211,16 @@ AI suggestion
       ↓
 Evidence + explanation
       ↓
-Confidence level
+Confidence
       ↓
 Automated validation where possible
       ↓
 Human review
 ```
 
-My background in software quality and test automation makes the **validation layer** particularly interesting to me.
+My background in software quality and test automation makes this validation layer particularly relevant to the direction of the project.
 
-A future version of the project could investigate not only how AI generates BIM information, but also how its outputs can be systematically tested.
+A future iteration will investigate not only how an AI system proposes BIM information, but also **how those outputs can be systematically tested and evaluated**.
 
 ## Current limitations
 
@@ -205,41 +229,63 @@ This is intentionally a small exploratory proof of concept.
 Current limitations include:
 
 - the technical specification is synthetic;
-- requirements are currently stored in a simple text file;
-- only a limited number of IFC object classes are analysed;
-- there is no document retrieval pipeline yet;
+- requirements are stored in a simple text file;
+- the entire requirement set is currently provided directly to the LLM;
+- there is no retrieval pipeline yet;
 - there is no RAG implementation yet;
-- generated associations are not evaluated against a labelled reference dataset;
-- the system does not write information back into the IFC model;
-- relationships and spatial context are only partially exploited;
-- LLM outputs may still contain incorrect interpretations;
+- source passages are not yet attached to individual suggestions;
+- only a limited number of IFC object classes are analysed;
+- IFC relationships and spatial context are only partially exploited;
+- generated results are not evaluated against a labelled reference dataset;
+- information is not written back into the IFC model;
+- LLM outputs can still contain incorrect interpretations;
 - human validation remains mandatory.
 
-## Possible next steps
+## Next steps
 
-### 1. Technical-document ingestion
+### 1. Retrieval-Augmented Generation
 
-Process PDF specifications and other project documents instead of a manually prepared text file.
+Instead of providing all technical requirements to the LLM, retrieve only the passages that are semantically relevant to the BIM object being analysed.
 
-### 2. Retrieval-Augmented Generation
-
-Add a RAG pipeline to retrieve only the relevant passages before semantic analysis.
-
-### 3. Source traceability
-
-Associate each proposed BIM enrichment with:
+Target architecture:
 
 ```text
-Document
-→ page / section
-→ source passage
-→ proposed BIM property
-→ confidence
+BIM object
+      +
+BIM properties
+      ↓
+semantic query
+      ↓
+document retrieval
+      ↓
+relevant passages only
+      ↓
+LLM analysis
 ```
+
+### 2. Source traceability
+
+Every proposed enrichment should eventually include its documentary evidence:
+
+```text
+BIM object
+→ requirement
+→ source document
+→ source passage
+→ reasoning
+→ confidence
+→ proposed BIM property
+```
+
+### 3. Technical-document ingestion
+
+Extend the system from a simple `.txt` specification to PDF specifications and other project documentation.
 
 ### 4. Automated evaluation
 
-Create a manually labelled dataset and evaluate:
+Create a manually labelled test dataset and compare expected results with generated results.
+
+Metrics could include:
 
 - true positives;
 - false positives;
@@ -249,22 +295,36 @@ Create a manually labelled dataset and evaluate:
 
 ### 5. BIM quality validation
 
-Combine AI-assisted enrichment with deterministic BIM rules to automatically verify whether required properties are present and correctly structured.
+Combine semantic AI analysis with deterministic BIM validation rules.
+
+For example:
+
+```text
+AI identifies expected FireRating
+        ↓
+deterministic validator checks IFC
+        ↓
+property present?
+        ↓
+value populated?
+        ↓
+PASS / WARNING / FAIL
+```
 
 ### 6. IFC write-back
 
-After human approval, write validated information into a copy of the IFC model.
+After human approval, validated semantic information could be written into a copy of the IFC model.
 
 ### 7. User interface
 
-Create a lightweight interface showing:
+A lightweight interface could eventually display:
 
 ```text
 BIM object
 +
-AI suggestion
+retrieved documentary evidence
 +
-source evidence
+AI suggestion
 +
 confidence
 +
@@ -273,17 +333,17 @@ validation status
 
 ## Professional context
 
-My background combines three domains:
+My background combines:
 
 **Architecture × Software Engineering / QA Automation × BIM**
 
-I initially trained as an architect before moving into software quality and test automation, where I worked on automated testing, APIs, data flows and reliability of complex software systems.
+I initially trained as an architect before moving into software quality and test automation, working on automated testing, APIs, data flows and reliability of complex software systems.
 
 I am currently completing a Specialized Master in BIM and exploring the convergence between:
 
 **BIM · automation · data · computational design · artificial intelligence for AEC**
 
-This project represents an initial exploration of that direction.
+This project is an initial practical exploration of that direction.
 
 ## Disclaimer
 
