@@ -231,3 +231,62 @@ Associate each proposed BIM enrichment with:
 
 ```text
 Document
+→ page / section
+→ source passage
+→ proposed BIM property
+→ confidence
+```
+
+### 4. Automated evaluation
+
+Create a manually labelled dataset and evaluate:
+
+- true positives;
+- false positives;
+- false negatives;
+- precision;
+- recall.
+
+### 5. BIM quality validation
+
+Combine AI-assisted enrichment with deterministic BIM rules to automatically verify whether required properties are present and correctly structured.
+
+### 6. IFC write-back
+
+After human approval, write validated information into a copy of the IFC model.
+
+### 7. User interface
+
+Create a lightweight interface showing:
+
+```text
+BIM object
++
+AI suggestion
++
+source evidence
++
+confidence
++
+validation status
+```
+
+## Professional context
+
+My background combines three domains:
+
+**Architecture × Software Engineering / QA Automation × BIM**
+
+I initially trained as an architect before moving into software quality and test automation, where I worked on automated testing, APIs, data flows and reliability of complex software systems.
+
+I am currently completing a Specialized Master in BIM and exploring the convergence between:
+
+**BIM · automation · data · computational design · artificial intelligence for AEC**
+
+This project represents an initial exploration of that direction.
+
+## Disclaimer
+
+This repository is an exploratory proof of concept developed for learning and research purposes.
+
+It does **not** perform regulatory or engineering compliance checking, and its outputs must not be considered authoritative technical decisions.
