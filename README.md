@@ -1,352 +1,890 @@
-# Semantic BIM Enrichment — Proof of Concept
+# Semantic BIM Enrichment PoC
 
-A small proof of concept exploring how AI can help connect **structured BIM/IFC data** with **unstructured technical project requirements**.
+[🇫🇷 Version française](README.fr.md)
 
-The objective is not to automate compliance decisions, but to investigate how semantic information can be proposed for BIM objects while preserving **context, uncertainty, traceability and human validation**.
+## Overview
 
-## The problem
+**Semantic BIM Enrichment** is a proof of concept exploring how structured BIM data can be connected with natural-language technical requirements through a hybrid AI workflow.
 
-BIM models contain structured information about building objects such as walls, doors, windows, slabs, properties and classifications.
+The project combines:
 
-However, a significant part of project knowledge remains stored in unstructured sources such as:
+- IFC data extraction with IfcOpenShell
+- deterministic BIM structure
+- semantic retrieval using embeddings
+- contextual reasoning with an LLM
+- requirement traceability
+- explicit handling of missing information
+- deterministic validation of IFC property suggestions
+- automated regression testing
 
-- technical specifications;
-- requirements documents;
-- project documentation;
-- standards and contractual information.
+The objective is **not** to let an LLM autonomously decide whether a BIM model is compliant.
 
-This project explores one question:
+Instead, the PoC explores how AI can assist with:
 
-> **Can an AI system identify which textual requirements may be relevant to specific BIM objects using the information available in an IFC model?**
+- identifying potentially relevant technical requirements;
+- determining whether available BIM evidence is sufficient;
+- distinguishing missing applicability context from missing required data;
+- proposing structured IFC properties;
+- keeping deterministic validation and human review in the workflow.
 
-## Architecture
+---
 
-```text
-IFC Model                    Technical Requirements
-    │                               │
-    ▼                               ▼
-IfcOpenShell                     Text input
-    │                               │
-    ▼                               ▼
-Structured BIM data ───────► Semantic analysis
-                                  │
-                     ┌────────────┴────────────┐
-                     ▼                         ▼
-            Deterministic baseline      LLM-assisted analysis
-                     │                         │
-                     └────────────┬────────────┘
-                                  ▼
-                         Suggested enrichment
-                                  │
-                                  ▼
-                     Confidence + explanation
-                                  │
-                                  ▼
-                          Human validation
-```
+## Problem
 
-## Technologies
-
-- Python
-- IFC4
-- IfcOpenShell
-- OpenAI API
-- JSON / CSV
-- LLM-assisted semantic analysis
-
-## Method
-
-The proof of concept compares two approaches applied to the **same BIM object and the same technical requirements**.
-
-### 1. Deterministic baseline
-
-The first implementation uses simple rules based on the IFC object class and keywords contained in the technical requirements.
+Technical project requirements are often expressed in natural language, while BIM models contain structured information.
 
 For example:
-
-```text
-IfcDoor
-   ↓
-Search requirements containing "door"
-   ↓
-Associate matching requirement
-```
-
-This approach is deterministic and easy to audit.
-
-However, it mainly identifies lexical relationships. It does not determine whether all the conditions contained in a requirement are actually satisfied by the BIM context.
-
-### 2. LLM-assisted semantic analysis
-
-The second implementation provides the language model with:
-
-- the IFC object class;
-- the available BIM properties;
-- contextual information contained in the IFC data;
-- the technical requirements.
-
-The model is instructed to:
-
-- avoid inventing unavailable information;
-- identify potentially relevant requirements;
-- explain why they may apply;
-- report uncertainty through a confidence level;
-- suggest a possible BIM property where appropriate;
-- leave the final decision to a human reviewer.
-
-## Experiment — same BIM object, different reasoning behaviour
-
-The following BIM object was analysed using both approaches:
-
-```text
-GlobalId: 0pGAjlJMP3ifYPATVF5xAR
-IFC class: IfcDoor
-Name: Innentuer-2
-```
-
-The technical specification contained the following requirement:
 
 > All doors on protected circulation routes must have an appropriate fire-resistance rating documented in the BIM data.
 
-### Deterministic baseline
+An IFC model may contain:
 
-The deterministic baseline associates this requirement with the object because:
+- the door;
+- its IFC class;
+- connected rooms;
+- its Property Sets;
+- architectural classifications;
 
-```text
-Object class = IfcDoor
-+
-Requirement contains "doors"
-```
+while still not explicitly stating whether the associated corridor is a **protected circulation route**.
 
-Result:
+A reliable system must therefore distinguish between:
 
-![Deterministic baseline result](docs/baseline-door.png)
+- a requirement that clearly applies;
+- a requirement that clearly does not apply;
+- a requirement whose applicability cannot yet be determined.
 
-This establishes a lexical relationship between the BIM object and the requirement.
-
-However, the rule does not analyse the additional condition:
-
-> **on protected circulation routes**
-
-The baseline therefore cannot determine whether this condition is actually supported by the IFC data.
-
-### LLM-assisted analysis
-
-The same BIM object was then analysed using the LLM.
-
-The model identified that the door connects to a hallway (`Flur`), making the fire-resistance requirement potentially relevant.
-
-However, it also identified that the available IFC data does **not establish that this hallway is a protected circulation route**.
-
-It therefore returned:
+The PoC uses three statuses:
 
 ```text
-confidence: low
-suggested property: Pset_DoorCommon.FireRating
-suggested value: null
+applicable
+not_applicable
+uncertain
 ```
 
-Result:
+The `uncertain` status is particularly important.
 
-![LLM contextual analysis](docs/llm-door.png)
+Missing BIM information must not automatically be interpreted as non-compliance.
 
-The important difference is therefore not that the LLM has proven the requirement to be applicable or not applicable.
+---
 
-Instead:
+## Current Architecture
 
 ```text
-Deterministic baseline
-        ↓
-"IfcDoor" matches "doors"
-        ↓
-requirement associated
+                      IFC MODEL
+                          |
+                          v
+                   IFC extraction
+                    IfcOpenShell
+                          |
+                          v
+                  BIM object context
+                          |
+              +-----------+-----------+
+              |                       |
+              v                       v
+      Structural IFC family     Retrieval query
+         identification         + semantic hints
+              |                       |
+              |                       v
+              |                  Embeddings
+              |                       |
+              +-----------+-----------+
+                          |
+                          v
+                  Hybrid retrieval
+                          |
+                          v
+               Candidate requirements
+                          |
+                          v
+                   LLM reasoning
+                          |
+             +------------+-------------+
+             |            |             |
+        applicable     uncertain    not_applicable
+             |
+             v
+       IFC property proposal
+             |
+             v
+          IfcOpenShell
+   deterministic property validation
+             |
+             v
+        Human validation
 ```
 
-versus:
+The architecture deliberately separates tasks that benefit from AI from tasks that can be verified deterministically.
+
+---
+
+## Hybrid Retrieval
+
+### Initial approach
+
+The first version relied primarily on semantic similarity between BIM object descriptions and technical requirements.
+
+On a simple requirement set, retrieval achieved:
 
 ```text
-LLM-assisted analysis
-        ↓
-IfcDoor + BIM properties + requirement conditions
-        ↓
-requirement potentially relevant
-        ↓
-missing evidence identified
-        ↓
-confidence = low
-        ↓
-human validation required
+Recall@1: 8/8 — 100%
 ```
 
-## Initial observation
+However, the dataset was small and the requirements were relatively easy to distinguish.
 
-| Capability | Deterministic baseline | LLM-assisted approach |
-|---|---|---|
-| Uses IFC object class | Yes | Yes |
-| Uses textual keywords | Yes | Yes |
-| Uses BIM contextual properties | No / very limited | Yes |
-| Interprets conditional wording | No | Partially |
-| Provides an explanation | No | Yes |
-| Represents uncertainty | No | Yes |
-| Suggests BIM properties | No | Yes |
-| Can produce incorrect results | Yes | Yes |
-| Requires human validation | Yes | Yes |
+A perfect score on that dataset did not demonstrate robustness.
 
-This experiment **does not demonstrate that the LLM is globally more accurate than deterministic rules**.
+### Stress test with hard negatives
 
-It demonstrates a narrower point:
+Semantically similar requirements were deliberately introduced to make retrieval more difficult.
 
-> A language model can use additional contextual information and explicitly represent uncertainty where a simple class/keyword matching rule cannot.
-
-A proper accuracy comparison would require a manually labelled reference dataset and systematic evaluation.
-
-## Why validation matters
-
-Generative AI should not be treated as a source of truth for BIM, engineering or regulatory decisions.
-
-The intended architecture therefore follows this principle:
+Examples included:
 
 ```text
-AI suggestion
-      ↓
-Evidence + explanation
-      ↓
-Confidence
-      ↓
-Automated validation where possible
-      ↓
-Human review
+External windows ...
+Internal windows ...
+
+External doors ...
+Internal doors connecting rooms to circulation areas ...
+
+Floor slabs in technical areas ...
+Floor slabs in residential areas ...
 ```
 
-My background in software quality and test automation makes this validation layer particularly relevant to the direction of the project.
-
-A future iteration will investigate not only how an AI system proposes BIM information, but also **how those outputs can be systematically tested and evaluated**.
-
-## Current limitations
-
-This is intentionally a small exploratory proof of concept.
-
-Current limitations include:
-
-- the technical specification is synthetic;
-- requirements are stored in a simple text file;
-- the entire requirement set is currently provided directly to the LLM;
-- there is no retrieval pipeline yet;
-- there is no RAG implementation yet;
-- source passages are not yet attached to individual suggestions;
-- only a limited number of IFC object classes are analysed;
-- IFC relationships and spatial context are only partially exploited;
-- generated results are not evaluated against a labelled reference dataset;
-- information is not written back into the IFC model;
-- LLM outputs can still contain incorrect interpretations;
-- human validation remains mandatory.
-
-## Next steps
-
-### 1. Retrieval-Augmented Generation
-
-Instead of providing all technical requirements to the LLM, retrieve only the passages that are semantically relevant to the BIM object being analysed.
-
-Target architecture:
+The retrieval stress test produced:
 
 ```text
-BIM object
-      +
-BIM properties
-      ↓
-semantic query
-      ↓
-document retrieval
-      ↓
-relevant passages only
-      ↓
-LLM analysis
+Recall@1: 4/8 — 50.00%
+Recall@2: 5/8 — 62.50%
+Recall@3: 8/8 — 100.00%
 ```
 
-### 2. Source traceability
+This failure was useful.
 
-Every proposed enrichment should eventually include its documentary evidence:
+It revealed that embeddings were being asked to rediscover information already explicitly available in IFC.
+
+For example, the BIM model already knows whether an object is an:
 
 ```text
-BIM object
-→ requirement
-→ source document
-→ source passage
-→ reasoning
-→ confidence
-→ proposed BIM property
+IfcDoor
+IfcWindow
+IfcWall
+IfcSlab
 ```
 
-### 3. Technical-document ingestion
+There is no reason to rely entirely on semantic similarity to determine that structural compatibility.
 
-Extend the system from a simple `.txt` specification to PDF specifications and other project documentation.
+### Architectural improvement
 
-### 4. Automated evaluation
+The retrieval architecture was therefore changed to:
 
-Create a manually labelled test dataset and compare expected results with generated results.
-
-Metrics could include:
-
-- true positives;
-- false positives;
-- false negatives;
-- precision;
-- recall.
-
-### 5. BIM quality validation
-
-Combine semantic AI analysis with deterministic BIM validation rules.
+```text
+IFC structural filtering
+        +
+semantic ranking
+```
 
 For example:
 
 ```text
-AI identifies expected FireRating
-        ↓
-deterministic validator checks IFC
-        ↓
-property present?
-        ↓
-value populated?
-        ↓
-PASS / WARNING / FAIL
+IfcWindow
+    |
+    v
+keep Window-compatible requirements
+    |
+    v
+semantic ranking between
+External Window / Internal Window rules
 ```
 
-### 6. IFC write-back
+The deterministic filter removes structurally incompatible requirements before semantic ranking.
 
-After human approval, validated semantic information could be written into a copy of the IFC model.
+Embeddings are then used where semantic comparison is actually useful.
 
-### 7. User interface
+---
 
-A lightweight interface could eventually display:
+## Requirement Classification
+
+Requirements are classified into IFC entity families before structural filtering.
+
+Example:
 
 ```text
-BIM object
-+
-retrieved documentary evidence
-+
-AI suggestion
-+
-confidence
-+
-validation status
+"External windows must include acoustic-performance information..."
+
+→ IfcWindow
 ```
 
-## Professional context
+The current V1 uses a transparent deterministic keyword-based baseline classifier.
 
-My background combines:
+Controlled evaluation:
 
-**Architecture × Software Engineering / QA Automation × BIM**
+```text
+9 / 9 requirement classifications correct
+```
 
-I initially trained as an architect before moving into software quality and test automation, working on automated testing, APIs, data flows and reliability of complex software systems.
+This result applies only to the current controlled dataset.
 
-I am currently completing a Specialized Master in BIM and exploring the convergence between:
+The classifier is intentionally simple and is **not** presented as a universal natural-language requirement classifier.
 
-**BIM · automation · data · computational design · artificial intelligence for AEC**
+More ambiguous formulations remain a future research area.
 
-This project is an initial practical exploration of that direction.
+---
+
+## Retrieval and Reasoning Are Separate Responsibilities
+
+A central design decision is to separate:
+
+```text
+retrieval
+```
+
+from:
+
+```text
+reasoning
+```
+
+Retrieval answers:
+
+> Which requirements should be examined for this BIM object?
+
+Reasoning answers:
+
+> Given the available BIM evidence, what can be concluded about each requirement?
+
+A retrieved requirement is therefore only a **candidate**.
+
+It is never automatically considered applicable.
+
+This distinction is especially important because several requirements may legitimately concern the same BIM object.
+
+---
+
+## LLM Reasoning
+
+For each retrieved requirement, the LLM returns structured output similar to:
+
+```json
+{
+  "source_chunk_id": "REQ-001",
+  "requirement": "...",
+  "status": "uncertain",
+  "reason": "...",
+  "missing_context": [],
+  "missing_required_data": [],
+  "confidence": "medium",
+  "suggested_property": "Pset_DoorCommon.FireRating",
+  "suggested_value": null
+}
+```
+
+### Status definitions
+
+#### `applicable`
+
+The available BIM evidence supports the conditions that make the requirement applicable.
+
+#### `not_applicable`
+
+The available BIM evidence clearly shows that the requirement does not concern the object.
+
+#### `uncertain`
+
+The requirement may concern the object, but information required to determine applicability is missing.
+
+---
+
+## Missing Context vs Missing Required Data
+
+The project explicitly separates two different kinds of missing information.
+
+### `missing_context`
+
+Information required to determine whether the requirement applies.
+
+Example:
+
+```text
+Is this corridor a protected circulation route?
+```
+
+### `missing_required_data`
+
+Information required to assess or satisfy the requirement once its applicability conditions are established.
+
+Example:
+
+```text
+What fire-resistance rating is required?
+```
+
+This distinction prevents missing BIM data from being interpreted too quickly as non-compliance.
+
+---
+
+## Retrieval Evidence vs Reasoning Evidence
+
+The system also separates information used to improve retrieval from information used as evidence by the reasoning model.
+
+For example, the source IFC contains the German ArchiCAD value:
+
+```text
+Außenwände
+```
+
+For semantic retrieval, the query may be enriched with:
+
+```text
+Semantic layer meaning: external walls
+```
+
+This helps embeddings work across heterogeneous terminology.
+
+However, this added interpretation is **not passed to the LLM as original BIM evidence**.
+
+The reasoning context retains the source value:
+
+```text
+Außenwände
+```
+
+The architecture therefore distinguishes:
+
+```text
+retrieval-oriented semantic normalization
+```
+
+from:
+
+```text
+source BIM evidence
+```
+
+This reduces the risk of a transformation introduced for search purposes silently becoming compliance evidence.
+
+---
+
+## IFC Property Suggestions
+
+When information is missing, the LLM may suggest a standard IFC property.
+
+Example:
+
+```text
+Pset_DoorCommon.FireRating
+```
+
+The LLM suggestion is not automatically trusted.
+
+A second deterministic step verifies it using IfcOpenShell.
+
+---
+
+## Deterministic IFC Property Validation
+
+For every proposed IFC property, the system verifies:
+
+```text
+Does the Property Set exist?
+
+Does the property exist inside that Property Set?
+
+Is the Property Set applicable to this IFC class?
+```
+
+Example of a valid proposal:
+
+```text
+Pset_DoorCommon.FireRating
+→ valid: true
+```
+
+Example of a deliberately invalid proposal:
+
+```text
+Pset_DoorCommon.MadeUpRating
+→ valid: false
+```
+
+The invalid property is rejected because `MadeUpRating` does not exist in `Pset_DoorCommon`.
+
+The original LLM suggestion is preserved together with the validation result.
+
+This creates an auditable distinction between:
+
+```text
+LLM proposal
+```
+
+and:
+
+```text
+deterministically validated IFC property
+```
+
+A `valid: true` result means that the IFC property path is structurally valid for the selected IFC schema and class.
+
+It does **not** mean that the proposed property is automatically the correct regulatory interpretation of the requirement.
+
+---
+
+## Evaluation Strategy
+
+The project evaluates different parts of the system separately instead of relying on one global accuracy number.
+
+---
+
+### 1. Controlled Reasoning Benchmark
+
+The first controlled reasoning dataset evaluated the three reasoning statuses:
+
+```text
+applicable
+uncertain
+not_applicable
+```
+
+Result:
+
+```text
+32 / 32 expected decisions matched
+```
+
+Breakdown:
+
+```text
+applicable:      4 / 4
+uncertain:       4 / 4
+not_applicable: 24 / 24
+```
+
+These results apply only to the controlled evaluation dataset.
+
+They are **not** presented as real-world accuracy.
+
+---
+
+### 2. Initial Retrieval Benchmark
+
+On the first simple requirement set:
+
+```text
+Recall@1: 8 / 8
+```
+
+This result was intentionally challenged rather than treated as proof of robustness.
+
+---
+
+### 3. Retrieval Stress Test
+
+After introducing semantically similar hard negatives:
+
+```text
+Recall@1: 4 / 8 — 50.00%
+Recall@2: 5 / 8 — 62.50%
+Recall@3: 8 / 8 — 100.00%
+```
+
+The drop in Recall@1 exposed a weakness in embedding-only retrieval.
+
+That experiment directly motivated the move toward hybrid retrieval using:
+
+```text
+IFC structural filtering
++
+semantic ranking
+```
+
+The failed stress test is intentionally kept as part of the project methodology because it documents how the architecture evolved from observed weaknesses.
+
+---
+
+### 4. Requirement Classifier Evaluation
+
+The deterministic baseline requirement classifier was evaluated on the current stress-test requirement set.
+
+Result:
+
+```text
+9 / 9 classifications correct
+```
+
+Again, this applies only to the controlled test set.
+
+---
+
+### 5. IFC Property Validator Test
+
+The deterministic IFC property validator correctly accepted valid standard IFC4 properties such as:
+
+```text
+Pset_DoorCommon.FireRating
+Pset_DoorCommon.AcousticRating
+Pset_WallCommon.AcousticRating
+Pset_WallCommon.FireRating
+Pset_SlabCommon.FireRating
+Pset_SlabCommon.AcousticRating
+```
+
+and rejected the deliberately invalid:
+
+```text
+Pset_DoorCommon.MadeUpRating
+```
+
+---
+
+### 6. V1 End-to-End Regression Suite
+
+The current architecture is covered by an automated end-to-end regression suite across:
+
+```text
+IfcDoor
+IfcWindow
+IfcWallStandardCase
+IfcSlab
+```
+
+The regression test checks:
+
+- requirements surviving structural filtering;
+- requirements actually analysed by the LLM;
+- expected reasoning statuses;
+- deterministic validation of any proposed IFC property.
+
+Current result:
+
+```text
+Total checks: 26
+PASS: 26
+FAIL: 0
+
+Success rate: 100.00%
+
+NO REGRESSION DETECTED
+```
+
+This means that the current V1 passes all checks in its controlled regression suite.
+
+It does **not** imply 100% accuracy on unseen BIM projects, specifications, regulations, or IFC models.
+
+---
+
+## Example Workflow
+
+Consider an interior IFC door connecting a bathroom to a hallway:
+
+```text
+IfcDoor
+Bad ↔ Flur
+```
+
+The hybrid retrieval layer may retain:
+
+```text
+REQ-001
+Doors on protected circulation routes
+→ fire resistance
+
+REQ-006
+Internal doors connecting rooms to circulation areas
+→ acoustic performance
+
+REQ-007
+External doors
+→ thermal performance
+```
+
+The reasoning layer may then produce:
+
+```text
+REQ-001 → uncertain
+
+The door connects to a hallway,
+but the model does not establish whether
+that hallway is a protected circulation route.
+```
+
+```text
+REQ-006 → uncertain
+
+The door is internal and connects to a hallway,
+but the project acoustic requirement is unknown.
+```
+
+```text
+REQ-007 → not_applicable
+
+The available BIM evidence identifies
+the object as an internal door.
+```
+
+For the missing fire-resistance information, the LLM may suggest:
+
+```text
+Pset_DoorCommon.FireRating
+```
+
+IfcOpenShell then independently validates whether that property exists and is applicable to `IfcDoor`.
+
+---
+
+## Current V1 Scope
+
+The current version includes:
+
+- IFC4 model extraction with IfcOpenShell
+- BIM object extraction by GlobalId
+- BIM property extraction
+- semantic BIM query generation
+- retrieval-oriented semantic normalization
+- separate reasoning evidence generation
+- technical requirement chunking
+- object/process requirement separation
+- requirement-to-IFC-family classification
+- structural IFC filtering
+- embedding-based semantic ranking
+- contextual LLM reasoning
+- requirement source traceability
+- `applicable / uncertain / not_applicable` classification
+- missing applicability context identification
+- missing required data identification
+- IFC property suggestions
+- deterministic IFC property validation
+- controlled reasoning evaluation
+- retrieval evaluation
+- retrieval stress testing
+- requirement classifier evaluation
+- property validator testing
+- automated end-to-end regression testing
+
+---
+
+## Current Limitations
+
+This project is an experimental PoC, not a production compliance system.
+
+Current limitations include:
+
+- one demonstration IFC model;
+- small synthetic requirement datasets;
+- limited IFC entity-family coverage;
+- simple keyword-based requirement classification;
+- no production regulatory dataset;
+- no automated regulatory compliance decision;
+- no large-scale labelled benchmark;
+- no vector database;
+- embeddings are currently recomputed during retrieval;
+- multilingual BIM terminology is only partially normalized;
+- no PDF or general document-ingestion pipeline yet;
+- no automatic IFC write-back;
+- no BIM viewer integration;
+- no production-scale provenance model;
+- no IDS generation pipeline yet;
+- no IDS validation integrated into the current workflow.
+
+Human validation intentionally remains part of the process.
+
+---
+
+## Future Work
+
+Possible next steps include:
+
+- ingestion of real project specifications;
+- PDF and document processing;
+- stronger multilingual normalization;
+- support for additional IFC entity families;
+- larger labelled evaluation datasets;
+- embedding caching or vector storage;
+- more robust requirement classification;
+- requirement provenance across multiple documents;
+- IDS integration;
+- structured requirement generation after human validation;
+- deterministic IFC/IDS validation;
+- BIM viewer integration;
+- controlled IFC enrichment and write-back;
+- CI execution of regression tests.
+
+A possible future architecture is:
+
+```text
+Project documents
+       |
+       v
+RAG / semantic interpretation
+       |
+       v
+Structured requirement proposal
+       |
+       v
+Human validation
+       |
+       v
+IDS
+       |
+       v
+Deterministic IFC validation
+```
+
+AI interpretation and deterministic compliance validation remain separate responsibilities.
+
+---
+
+## Technology Stack
+
+```text
+Python
+IfcOpenShell
+OpenAI API
+Embeddings
+NumPy
+IFC4
+```
+
+---
+
+## Project Structure
+
+A simplified view of the current repository:
+
+```text
+data/
+├── model.ifc
+├── spec.txt
+└── spec_stress.txt
+
+src/
+├── ifc_extract.py
+├── baseline_enrich.py
+├── llm_enrich.py
+├── rag_retriever.py
+├── rag_enrich.py
+├── requirement_classifier.py
+├── ifc_property_validator.py
+├── evaluate_reasoning.py
+├── evaluate_retrieval.py
+├── evaluate_retrieval_stress.py
+├── evaluate_requirement_classifier.py
+├── evaluate_pipeline_regression.py
+├── test_rag.py
+├── test_rag_stress.py
+├── test_synthetic_cases.py
+└── test_property_validator.py
+```
+
+Some local input/output files may be excluded from version control.
+
+---
+
+## Running the Main Tests
+
+Activate the Python environment and run the desired evaluation module.
+
+### Controlled reasoning evaluation
+
+```bash
+python -m src.evaluate_reasoning
+```
+
+### Retrieval evaluation
+
+```bash
+python -m src.evaluate_retrieval
+```
+
+### Retrieval stress test
+
+```bash
+python -m src.evaluate_retrieval_stress
+```
+
+### Requirement classifier evaluation
+
+```bash
+python -m src.evaluate_requirement_classifier
+```
+
+### IFC property validator
+
+```bash
+python -m src.test_property_validator
+```
+
+### End-to-end V1 regression suite
+
+```bash
+python -m src.evaluate_pipeline_regression
+```
+
+Expected current regression result:
+
+```text
+Total checks: 26
+PASS: 26
+FAIL: 0
+Success rate: 100.00%
+
+NO REGRESSION DETECTED
+```
+
+---
+
+## Environment
+
+Create a local `.env` file:
+
+```env
+OPENAI_API_KEY=your_api_key_here
+OPENAI_MODEL=gpt-6-luna
+```
+
+The `.env` file must remain local and must not be committed.
+
+Install dependencies with:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Current Milestone
+
+```text
+V1
+
+Hybrid BIM retrieval
++
+contextual LLM reasoning
++
+traceable uncertainty
++
+deterministic IFC property validation
++
+automated regression testing
+```
+
+The project explores the intersection between:
+
+```text
+BIM
+IFC / openBIM
+software engineering
+QA automation
+information retrieval
+LLMs
+AI-assisted AEC workflows
+```
+
+---
 
 ## Disclaimer
 
-This repository is an exploratory proof of concept developed for learning and research purposes.
+The technical requirements used in this demonstration are synthetic and are not regulatory requirements.
 
-It does **not** perform regulatory or engineering compliance checking, and its outputs must not be considered authoritative technical decisions.
+This project must not be used to establish building-code, fire-safety, acoustic, thermal, accessibility, or other regulatory compliance.
+
+The current system is a research and learning proof of concept intended to explore BIM, information retrieval, AI reasoning, deterministic validation, and software-quality methodologies.
