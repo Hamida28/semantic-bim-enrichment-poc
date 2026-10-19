@@ -1,9 +1,9 @@
-import json
+﻿import json
 
 from dotenv import load_dotenv
 
-from src.ifc_extract import extract_elements
-from src.rag_enrich import rag_enrich_element
+from src.core.ifc_extract import extract_elements
+from src.rag.rag_enrich import rag_enrich_element
 
 
 load_dotenv()
@@ -103,7 +103,7 @@ for case in TEST_CASES:
     print(
         "EXPECTED:",
         case["expected_requirement"],
-        "→",
+        "â†’",
         case["expected_status"],
     )
 
@@ -123,3 +123,4 @@ for case in TEST_CASES:
             ensure_ascii=False,
         )
     )
+

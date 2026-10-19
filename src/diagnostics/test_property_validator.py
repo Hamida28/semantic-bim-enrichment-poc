@@ -1,4 +1,4 @@
-from src.ifc_property_validator import (
+﻿from src.core.ifc_property_validator import (
     validate_ifc_property_path,
 )
 
@@ -50,3 +50,4 @@ for ifc_class, property_path in TESTS:
 
     for key, value in result.items():
         print(f"{key}: {value}")
+

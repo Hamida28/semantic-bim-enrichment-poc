@@ -1,9 +1,9 @@
-from pathlib import Path
+﻿from pathlib import Path
 
 from dotenv import load_dotenv
 
-from src.ifc_extract import extract_elements
-from src.rag_retriever import (
+from src.core.ifc_extract import extract_elements
+from src.rag.rag_retriever import (
     build_element_query,
     chunk_specification,
     retrieve_relevant_chunks,
@@ -13,7 +13,7 @@ from src.rag_retriever import (
 load_dotenv()
 
 
-# Porte que nous utilisons depuis le début
+# Porte que nous utilisons depuis le dÃ©but
 TARGET_GLOBAL_ID = "0pGAjlJMP3ifYPATVF5xAR"
 
 
@@ -43,7 +43,7 @@ specification = Path("data/spec.txt").read_text(
 )
 
 
-# 5. Découper le document
+# 5. DÃ©couper le document
 chunks = chunk_specification(specification)
 
 
@@ -65,3 +65,4 @@ Score: {result["similarity_score"]:.3f}
 Text: {result["text"]}
 """
     )
+

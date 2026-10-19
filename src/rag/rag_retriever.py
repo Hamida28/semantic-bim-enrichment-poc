@@ -1,5 +1,5 @@
 from __future__ import annotations
-from src.requirement_classifier import (
+from src.core.requirement_classifier import (
     classify_requirement_ifc_entity,
 )
 

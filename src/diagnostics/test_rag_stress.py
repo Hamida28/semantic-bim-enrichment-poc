@@ -1,9 +1,9 @@
-import json
+﻿import json
 
 from dotenv import load_dotenv
 
-from src.ifc_extract import extract_elements
-from src.rag_enrich import rag_enrich_element
+from src.core.ifc_extract import extract_elements
+from src.rag.rag_enrich import rag_enrich_element
 
 
 load_dotenv()
@@ -89,3 +89,4 @@ for test_case in TEST_OBJECTS:
             ensure_ascii=False,
         )
     )
+

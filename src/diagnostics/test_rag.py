@@ -1,10 +1,10 @@
-from pathlib import Path
+﻿from pathlib import Path
 import json
 
 from dotenv import load_dotenv
 
-from src.ifc_extract import extract_elements
-from src.rag_enrich import rag_enrich_element
+from src.core.ifc_extract import extract_elements
+from src.rag.rag_enrich import rag_enrich_element
 
 
 load_dotenv()
@@ -39,7 +39,7 @@ result = rag_enrich_element(
 )
 
 
-# 5. Afficher le résultat
+# 5. Afficher le rÃ©sultat
 print(
     json.dumps(
         result,
@@ -49,7 +49,7 @@ print(
 )
 
 
-# 6. Sauvegarder le résultat
+# 6. Sauvegarder le rÃ©sultat
 output_path = Path("output/rag_door.json")
 
 output_path.write_text(
@@ -62,3 +62,4 @@ output_path.write_text(
 )
 
 print(f"\nResult saved to: {output_path}")
+

@@ -1,16 +1,16 @@
-import sys
+﻿import sys
 
 from dotenv import load_dotenv
 
-from src.ifc_extract import extract_elements
-from src.rag_enrich import rag_enrich_element
+from src.core.ifc_extract import extract_elements
+from src.rag.rag_enrich import rag_enrich_element
 
 
 load_dotenv()
 
 
 # =========================================================
-# GROUND TRUTH — CURRENT V1 ARCHITECTURE
+# GROUND TRUTH â€” CURRENT V1 ARCHITECTURE
 # =========================================================
 
 TEST_CASES = [

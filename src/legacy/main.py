@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import csv
@@ -7,7 +7,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from .ifc_extract import extract_elements
+from src.core.ifc_extract import extract_elements
 from .baseline_enrich import baseline_enrich
 from .llm_enrich import llm_enrich
 
@@ -83,3 +83,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

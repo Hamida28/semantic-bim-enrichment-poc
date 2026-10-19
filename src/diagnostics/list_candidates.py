@@ -1,6 +1,6 @@
-from dotenv import load_dotenv
+﻿from dotenv import load_dotenv
 
-from src.ifc_extract import extract_elements
+from src.core.ifc_extract import extract_elements
 
 
 load_dotenv()
@@ -8,43 +8,43 @@ load_dotenv()
 
 # ---------------------------------------------------------
 # Traduction pour l'AFFICHAGE uniquement.
-# Les données originales de l'IFC ne sont jamais modifiées.
+# Les donnÃ©es originales de l'IFC ne sont jamais modifiÃ©es.
 # ---------------------------------------------------------
 
 GERMAN_TO_FRENCH = {
-    # Pièces
-    "Wohnen": "Séjour",
+    # PiÃ¨ces
+    "Wohnen": "SÃ©jour",
     "Flur": "Couloir",
     "Buero": "Bureau",
-    "Büro": "Bureau",
+    "BÃ¼ro": "Bureau",
     "Schlafzimmer": "Chambre",
     "Bad": "Salle de bain",
-    "Küche": "Cuisine",
+    "KÃ¼che": "Cuisine",
     "Kueche": "Cuisine",
     "Galerie": "Galerie",
 
     # Types / classifications
     "Wand": "Mur",
-    "Tür": "Porte",
+    "TÃ¼r": "Porte",
     "Tuer": "Porte",
-    "Fenster": "Fenêtre",
+    "Fenster": "FenÃªtre",
     "Decke": "Dalle / plancher",
     "Dach": "Toiture",
 
-    # Layers / catégories
-    "Innenwände": "Murs intérieurs",
-    "Innenwaende": "Murs intérieurs",
-    "Außenwände": "Murs extérieurs",
-    "Aussenwaende": "Murs extérieurs",
+    # Layers / catÃ©gories
+    "InnenwÃ¤nde": "Murs intÃ©rieurs",
+    "Innenwaende": "Murs intÃ©rieurs",
+    "AuÃŸenwÃ¤nde": "Murs extÃ©rieurs",
+    "Aussenwaende": "Murs extÃ©rieurs",
     "Decken": "Dalles / planchers",
-    "Dächer": "Toitures",
+    "DÃ¤cher": "Toitures",
     "Daecher": "Toitures",
 }
 
 
 def translate(value):
     """
-    Retourne la valeur IFC originale + sa traduction française.
+    Retourne la valeur IFC originale + sa traduction franÃ§aise.
     """
     if value in (None, ""):
         return value
@@ -65,13 +65,13 @@ def translate_name(name):
         return name
 
     if name.startswith("Wand-Int-ERDG"):
-        return f"{name} [FR: Mur intérieur RDC]"
+        return f"{name} [FR: Mur intÃ©rieur RDC]"
 
     if name.startswith("Innentuer"):
-        return f"{name} [FR: Porte intérieure]"
+        return f"{name} [FR: Porte intÃ©rieure]"
 
     if name.startswith("EG-Fenster"):
-        return f"{name} [FR: Fenêtre RDC]"
+        return f"{name} [FR: FenÃªtre RDC]"
 
     if name == "Bodenplatte":
         return f"{name} [FR: Dalle de sol / dalle basse]"
@@ -164,3 +164,4 @@ for element in ifc_data["elements"]:
         "Window AcousticRating:",
         window_common.get("AcousticRating"),
     )
+

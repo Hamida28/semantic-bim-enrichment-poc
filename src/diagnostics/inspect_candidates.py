@@ -1,4 +1,4 @@
-from src.ifc_extract import extract_elements
+﻿from src.core.ifc_extract import extract_elements
 
 
 TARGET_IDS = {
@@ -6,7 +6,7 @@ TARGET_IDS = {
     "1Oms875aH3Wg$9l65H2ZGw",
     "0pGAjlJMP3ifYPATVF5xAR",
 
-    # Fenêtres
+    # FenÃªtres
     "1srAI$R4T8ihLXSNHmUSET",
     "0B1RwEzzP3CfME5NR$Vqh5",
 
@@ -21,44 +21,44 @@ TARGET_IDS = {
 
 
 TRANSLATIONS = {
-    # Pièces
-    "Wohnen": "Séjour",
+    # PiÃ¨ces
+    "Wohnen": "SÃ©jour",
     "Flur": "Couloir",
     "Buero": "Bureau",
-    "Büro": "Bureau",
+    "BÃ¼ro": "Bureau",
     "Schlafzimmer": "Chambre",
     "Bad": "Salle de bain",
-    "Küche": "Cuisine",
+    "KÃ¼che": "Cuisine",
     "Galerie": "Galerie",
 
-    # Étages
-    "Erdgeschoss": "Rez-de-chaussée",
-    "Dachgeschoss": "Étage sous toiture",
+    # Ã‰tages
+    "Erdgeschoss": "Rez-de-chaussÃ©e",
+    "Dachgeschoss": "Ã‰tage sous toiture",
 
-    # Catégories
-    "Innenwände": "Murs intérieurs",
-    "Außenwände": "Murs extérieurs",
+    # CatÃ©gories
+    "InnenwÃ¤nde": "Murs intÃ©rieurs",
+    "AuÃŸenwÃ¤nde": "Murs extÃ©rieurs",
     "Decken": "Dalles / planchers",
-    "Dächer": "Toitures",
+    "DÃ¤cher": "Toitures",
 
     # Types
     "Wand": "Mur",
-    "Tür": "Porte",
-    "Fenster": "Fenêtre",
+    "TÃ¼r": "Porte",
+    "Fenster": "FenÃªtre",
     "Decke": "Dalle / plancher",
     "Dach": "Toiture",
 
     # Autres
-    "Nicht definiert": "Non défini",
+    "Nicht definiert": "Non dÃ©fini",
     "Bestand": "Existant",
     "Einfach": "Simple",
-    "Stahlbeton": "Béton armé",
+    "Stahlbeton": "BÃ©ton armÃ©",
 }
 
 
 def fr(value):
     if value in (None, ""):
-        return "Non renseigné"
+        return "Non renseignÃ©"
 
     return TRANSLATIONS.get(str(value), value)
 
@@ -114,27 +114,27 @@ for element in ifc_data["elements"]:
     print("\n--- CONTEXTE BIM ---")
 
     show(
-        "Étage",
+        "Ã‰tage",
         archicad.get("Ursprungsgeschoss"),
     )
 
     show(
-        "Pièce",
+        "PiÃ¨ce",
         archicad.get("Raumname"),
     )
 
     show(
-        "Depuis la pièce",
+        "Depuis la piÃ¨ce",
         archicad.get("Von Raum"),
     )
 
     show(
-        "Vers la pièce",
+        "Vers la piÃ¨ce",
         archicad.get("zu Raum"),
     )
 
     show(
-        "Catégorie / couche",
+        "CatÃ©gorie / couche",
         archicad.get("Ebene"),
     )
 
@@ -149,8 +149,8 @@ for element in ifc_data["elements"]:
     )
 
     show(
-        "Protégé",
-        archicad.get("Geschützt"),
+        "ProtÃ©gÃ©",
+        archicad.get("GeschÃ¼tzt"),
     )
 
     show(
@@ -164,13 +164,13 @@ for element in ifc_data["elements"]:
     )
 
     show(
-        "Matériau / composition",
+        "MatÃ©riau / composition",
         archicad.get(
             "Baustoff / Mehrschichtiger Aufbau / Profil / Schraffur"
         ),
     )
 
-    print("\n--- PROPRIÉTÉS IFC UTILES ---")
+    print("\n--- PROPRIÃ‰TÃ‰S IFC UTILES ---")
 
     if element["ifc_class"] == "IfcDoor":
 
@@ -180,12 +180,12 @@ for element in ifc_data["elements"]:
         )
 
         show(
-            "Résistance au feu",
+            "RÃ©sistance au feu",
             door_common.get("FireRating"),
         )
 
         show(
-            "Porte extérieure",
+            "Porte extÃ©rieure",
             door_common.get("IsExternal"),
         )
 
@@ -197,7 +197,7 @@ for element in ifc_data["elements"]:
     elif element["ifc_class"] == "IfcWindow":
 
         show(
-            "Fenêtre extérieure",
+            "FenÃªtre extÃ©rieure",
             window_common.get("IsExternal"),
         )
 
@@ -222,7 +222,7 @@ for element in ifc_data["elements"]:
         )
 
         show(
-            "Résistance au feu",
+            "RÃ©sistance au feu",
             wall_common.get("FireRating"),
         )
 
@@ -234,7 +234,7 @@ for element in ifc_data["elements"]:
     elif element["ifc_class"] == "IfcSlab":
 
         show(
-            "Résistance au feu",
+            "RÃ©sistance au feu",
             slab_common.get("FireRating"),
         )
 
@@ -242,3 +242,4 @@ for element in ifc_data["elements"]:
             "Transmission thermique",
             slab_common.get("ThermalTransmittance"),
         )
+

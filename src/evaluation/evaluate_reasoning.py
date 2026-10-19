@@ -1,10 +1,10 @@
-import csv
+﻿import csv
 import os
 
 from dotenv import load_dotenv
 
-from src.ifc_extract import extract_elements
-from src.rag_enrich import rag_enrich_element
+from src.core.ifc_extract import extract_elements
+from src.rag.rag_enrich import rag_enrich_element
 
 
 load_dotenv()
@@ -17,7 +17,7 @@ load_dotenv()
 TEST_CASES = [
 
     # -----------------------------------------------------
-    # CAS RÉELS → applicabilité incertaine
+    # CAS RÃ‰ELS â†’ applicabilitÃ© incertaine
     # -----------------------------------------------------
 
     {
@@ -69,7 +69,7 @@ TEST_CASES = [
     },
 
     # -----------------------------------------------------
-    # CAS SYNTHÉTIQUES → applicabilité confirmée
+    # CAS SYNTHÃ‰TIQUES â†’ applicabilitÃ© confirmÃ©e
     # -----------------------------------------------------
 
     {
@@ -156,7 +156,7 @@ TEST_CASES = [
 
 
 # =========================================================
-# CHARGEMENT DES DONNÉES
+# CHARGEMENT DES DONNÃ‰ES
 # =========================================================
 
 ifc_data = extract_elements(
@@ -177,7 +177,7 @@ results = []
 
 
 # =========================================================
-# EXÉCUTION DES TESTS
+# EXÃ‰CUTION DES TESTS
 # =========================================================
 
 for case in TEST_CASES:
@@ -245,7 +245,7 @@ for case in TEST_CASES:
 
 
 # =========================================================
-# MÉTRIQUES
+# MÃ‰TRIQUES
 # =========================================================
 
 total = len(results)
@@ -272,7 +272,7 @@ print(f"Accuracy: {accuracy:.2%}")
 
 
 # =========================================================
-# RÉSULTATS PAR STATUT
+# RÃ‰SULTATS PAR STATUT
 # =========================================================
 
 for status in [

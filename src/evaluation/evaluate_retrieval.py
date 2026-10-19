@@ -1,16 +1,15 @@
 from dotenv import load_dotenv
 
-from src.ifc_extract import extract_elements
-from src.rag_retriever import (
+from src.core.ifc_extract import extract_elements
+from src.rag.rag_retriever import (
     build_element_query,
     chunk_specification,
     retrieve_relevant_chunks,
 )
-from src.requirement_classifier import (
-    normalize_ifc_entity_family,
-)
+
 
 load_dotenv()
+
 
 # =========================================================
 # GROUND TRUTH DU RETRIEVAL
@@ -79,7 +78,7 @@ ifc_data = extract_elements(
 
 
 with open(
-    "data/spec_stress.txt",
+    "data/spec.txt",
     "r",
     encoding="utf-8",
 ) as file:
@@ -106,16 +105,11 @@ for case in TEST_CASES:
 
     query = build_element_query(element)
 
-    target_ifc_entity = normalize_ifc_entity_family(
-        element["ifc_class"]
-    )
-
     # On récupère toutes les exigences OBJECT
     retrieved = retrieve_relevant_chunks(
         query,
         chunks,
-        top_k=9,
-        target_ifc_entity=target_ifc_entity,
+        top_k=4,
     )
 
     retrieved_ids = [
@@ -135,7 +129,6 @@ for case in TEST_CASES:
     print("\n" + "=" * 70)
     print("TEST:", case["case_id"])
     print("OBJECT:", element["name"])
-    print("STRUCTURAL FAMILY:", target_ifc_entity)
     print("EXPECTED:", expected)
 
     for position, item in enumerate(

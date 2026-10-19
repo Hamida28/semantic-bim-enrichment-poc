@@ -1,5 +1,5 @@
-from src.rag_retriever import chunk_specification
-from src.requirement_classifier import (
+from src.rag.rag_retriever import chunk_specification
+from src.core.requirement_classifier import (
     classify_requirement_ifc_entity,
 )
 

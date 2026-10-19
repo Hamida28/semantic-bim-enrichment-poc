@@ -4,17 +4,17 @@ import json
 import os
 import re
 
-from src.ifc_property_validator import (
+from src.core.ifc_property_validator import (
     validate_ifc_property_path,
 )
 
-from src.requirement_classifier import (
+from src.core.requirement_classifier import (
     normalize_ifc_entity_family,
 )
 
 from openai import OpenAI
 
-from src.rag_retriever import (
+from src.rag.rag_retriever import (
     build_element_query,
     build_reasoning_context,
     chunk_specification,
